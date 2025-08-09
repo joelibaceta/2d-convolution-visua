@@ -204,12 +204,23 @@ function App() {
     );
   })() : [];
   
-  const highlightRegion = currentStep && inputImage.length > 0 ? {
-    startRow: currentStep.position.row,
-    startCol: currentStep.position.col,
-    height: currentKernel.length,
-    width: currentKernel.length
-  } : undefined;
+  const highlightRegion = currentStep && inputImage.length > 0 ? (() => {
+    const startRow = Math.max(0, currentStep.position.row);
+    const startCol = Math.max(0, currentStep.position.col);
+    const endRow = Math.min(inputImage.length, currentStep.position.row + currentKernel.length);
+    const endCol = Math.min(inputImage[0].length, currentStep.position.col + currentKernel.length);
+    
+    // Only create highlight if there's a visible region
+    if (startRow < inputImage.length && startCol < inputImage[0].length && endRow > startRow && endCol > startCol) {
+      return {
+        startRow,
+        startCol,
+        height: endRow - startRow,
+        width: endCol - startCol
+      };
+    }
+    return undefined;
+  })() : undefined;
   
   return (
     <div className="min-h-screen bg-background p-4">
