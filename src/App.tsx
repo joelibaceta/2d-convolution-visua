@@ -205,13 +205,22 @@ function App() {
   })() : [];
   
   const highlightRegion = currentStep && inputImage.length > 0 ? (() => {
+    // Don't show highlight if kernel position is completely outside the input bounds
+    if (currentStep.position.row >= inputImage.length || 
+        currentStep.position.col >= inputImage[0].length ||
+        currentStep.position.row + currentKernel.length <= 0 ||
+        currentStep.position.col + currentKernel.length <= 0) {
+      return undefined;
+    }
+    
     const startRow = Math.max(0, currentStep.position.row);
     const startCol = Math.max(0, currentStep.position.col);
     const endRow = Math.min(inputImage.length, currentStep.position.row + currentKernel.length);
     const endCol = Math.min(inputImage[0].length, currentStep.position.col + currentKernel.length);
     
-    // Only create highlight if there's a visible region
-    if (startRow < inputImage.length && startCol < inputImage[0].length && endRow > startRow && endCol > startCol) {
+    // Only create highlight if there's a visible region with valid dimensions
+    if (startRow < inputImage.length && startCol < inputImage[0].length && 
+        endRow > startRow && endCol > startCol) {
       return {
         startRow,
         startCol,
