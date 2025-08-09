@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useKV } from '@github/spark/hooks';
-import { Edit } from '@phosphor-icons/react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Pencil } from '@phosphor-icons/react';
 import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
 import { PaddedPixelGrid } from '@/components/PaddedPixelGrid';
@@ -66,20 +66,20 @@ function App() {
     }
   }, []);
   // Initialize with a default sample image
-  const [inputImage, setInputImage] = useKV<number[][]>('input-image', generateCheckerboard());
+  const [inputImage, setInputImage] = useLocalStorage<number[][]>('input-image', generateCheckerboard());
   const [convolutionResult, setConvolutionResult] = useState<ConvolutionResult | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useKV('animation-speed', 500);
+  const [animationSpeed, setAnimationSpeed] = useLocalStorage('animation-speed', 500);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   
   // Convolution parameters
-  const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
-  const [stride, setStride] = useKV('stride', 1);
-  const [padding, setPadding] = useKV<PaddingType>('padding', 'valid');
-  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'sharpen');
+  const [kernelSize, setKernelSize] = useLocalStorage('kernel-size', 3);
+  const [stride, setStride] = useLocalStorage('stride', 1);
+  const [padding, setPadding] = useLocalStorage<PaddingType>('padding', 'valid');
+  const [kernelPreset, setKernelPreset] = useLocalStorage<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'sharpen');
   const [customKernel, setCustomKernel] = useState<number[][]>(() => {
     // Initialize with a 3x3 edge detection kernel as a more interesting default
     return [
@@ -90,10 +90,10 @@ function App() {
   });
   
   // Display options  
-  const [showInputValues, setShowInputValues] = useKV<boolean>('show-input-values', false);
-  const [showKernelValues, setShowKernelValues] = useKV<boolean>('show-kernel-values', true);
-  const [showOutputValues, setShowOutputValues] = useKV<boolean>('show-output-values', false);
-  const [normalizeOutput, setNormalizeOutput] = useKV<boolean>('normalize-output', false);
+  const [showInputValues, setShowInputValues] = useLocalStorage<boolean>('show-input-values', false);
+  const [showKernelValues, setShowKernelValues] = useLocalStorage<boolean>('show-kernel-values', true);
+  const [showOutputValues, setShowOutputValues] = useLocalStorage<boolean>('show-output-values', false);
+  const [normalizeOutput, setNormalizeOutput] = useLocalStorage<boolean>('normalize-output', false);
   
   // Current kernel - memoized to prevent infinite re-renders
   const currentKernel = useMemo(() => {
@@ -368,7 +368,7 @@ function App() {
           <p>Keyboard shortcuts: <kbd className="bg-muted px-2 py-1 rounded text-xs">Space</kbd> to play/pause, <kbd className="bg-muted px-2 py-1 rounded text-xs">N</kbd> to step forward</p>
           {kernelPreset === 'custom' && (
             <p className="text-accent flex items-center justify-center gap-1">
-              Click the <Edit className="w-3 h-3" /> icon in the Kernel Inspector to edit your custom filter values
+              Click the <Pencil className="w-3 h-3" /> icon in the Kernel Inspector to edit your custom filter values
             </p>
           )}
         </div>
