@@ -20,10 +20,10 @@ Todo el código de este repositorio fue **generado al 100% usando [GitHub Spark]
 
 El flujo de **build y publicación en GitHub Pages** fue configurado con ayuda de **GitHub Copilot**.  
 El resultado se puede ver en vivo aquí:  
-🔗 **[Demo en GitHub Pages](https://joelibaceta.github.io/2d-convolution-visua/)**
+🔗 **[Demo en GitHub Pages](https://joelibaceta.github.io/2d-convolution-visualization/)**
 
 La sesión exacta donde el agente configuró el despliegue está registrada en:  
-🔗 **[Sesión del agente en PR #7](https://github.com/joelibaceta/2d-convolution-visua/pull/7/agent-sessions/b7c1a515-f51f-4ab9-8119-41f06f6e13b6)**
+🔗 **[Sesión del agente en PR #7](https://github.com/joelibaceta/2d-convolution-visualization/pull/7/agent-sessions/b7c1a515-f51f-4ab9-8119-41f06f6e13b6)**
 
 ---
 
@@ -43,8 +43,8 @@ index.html
 
 ```bash
 # Clonar el repositorio
-git clone https://github.com/joelibaceta/2d-convolution-visua.git
-cd 2d-convolution-visua
+git clone https://github.com/joelibaceta/2d-convolution-visualization.git
+cd 2d-convolution-visualization
 
 # Instalar dependencias
 npm install

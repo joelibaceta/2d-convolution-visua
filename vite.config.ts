@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: process.env.VITE_BASE ?? '/2d-convolution-visua/',
+  base: process.env.VITE_BASE ?? '/2d-convolution-visualization/',
   resolve: {
     alias: {
       '@': resolve(projectRoot, 'src')
