@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Upload, X } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { SAMPLE_IMAGES } from '@/lib/sampleImages';
 
 interface ImageUploaderProps {
   onImageLoad: (imageData: ImageData) => void;
@@ -12,6 +14,39 @@ interface ImageUploaderProps {
 export function ImageUploader({ onImageLoad, className }: ImageUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const generateSampleImageData = (imageArray: number[][]): ImageData => {
+    const size = imageArray.length;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = size;
+    canvas.height = size;
+    
+    const imageData = ctx.createImageData(size, size);
+    
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        const index = (i * size + j) * 4;
+        const value = imageArray[i][j];
+        imageData.data[index] = value;     // R
+        imageData.data[index + 1] = value; // G
+        imageData.data[index + 2] = value; // B
+        imageData.data[index + 3] = 255;   // A
+      }
+    }
+    
+    return imageData;
+  };
+
+  const handleSampleSelect = (sampleKey: string) => {
+    const sample = SAMPLE_IMAGES[sampleKey as keyof typeof SAMPLE_IMAGES];
+    if (sample) {
+      const imageArray = sample.generator();
+      const imageData = generateSampleImageData(imageArray);
+      onImageLoad(imageData);
+      setError(null);
+    }
+  };
 
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -66,7 +101,7 @@ export function ImageUploader({ onImageLoad, className }: ImageUploaderProps) {
     <Card className={cn("relative", className)}>
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
+          "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
           isDragging 
             ? "border-primary bg-primary/5" 
             : "border-muted-foreground/25 hover:border-muted-foreground/50"
@@ -92,11 +127,27 @@ export function ImageUploader({ onImageLoad, className }: ImageUploaderProps) {
           id="image-upload"
         />
         
-        <Button asChild className="cursor-pointer">
+        <Button asChild className="cursor-pointer mb-4">
           <label htmlFor="image-upload">
             Select Image
           </label>
         </Button>
+        
+        <div className="border-t pt-4">
+          <p className="text-sm text-muted-foreground mb-2">Or try a sample image:</p>
+          <Select onValueChange={handleSampleSelect}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose sample image..." />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(SAMPLE_IMAGES).map(([key, sample]) => (
+                <SelectItem key={key} value={key}>
+                  {sample.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         <p className="text-xs text-muted-foreground mt-4">
           Images will be automatically resized to 64×64 pixels

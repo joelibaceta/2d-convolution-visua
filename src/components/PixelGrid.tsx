@@ -97,13 +97,13 @@ export function PixelGrid({
                 onMouseEnter={() => onPixelHover?.(i, j, value)}
                 title={`(${j}, ${i}): ${value.toFixed(2)}`}
               >
-                {showValues && cellSize >= 12 && (
+                {showValues && cellSize >= 8 && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span 
                       className="text-xs font-mono leading-none"
                       style={{
                         color: normalizedValue > 0.5 ? '#000000' : '#ffffff',
-                        fontSize: `${Math.min(cellSize / 2.5, 10)}px`
+                        fontSize: `${Math.min(Math.max(cellSize / 3, 6), 10)}px`
                       }}
                     >
                       {Math.round(value)}
@@ -118,11 +118,11 @@ export function PixelGrid({
       
       {/* Sum of products overlay for output - positioned below grid */}
       {showSumOverlay && currentStep && (
-        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 mt-2 text-center w-full max-w-xs">
+        <div className="bg-accent/10 border border-accent/30 rounded-lg p-3 mt-3 text-center w-full max-w-xs">
           <div className="text-xs text-muted-foreground mb-1">
             Sum of products:
           </div>
-          <div className="text-xl font-mono font-bold text-accent-foreground">
+          <div className="text-xl font-mono font-bold text-foreground">
             {currentStep.sum.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">

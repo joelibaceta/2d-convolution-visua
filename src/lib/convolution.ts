@@ -295,13 +295,22 @@ export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: numbe
     return kernel;
   }
   
-  // For other kernels, if different size requested, fall back to identity
-  if (size !== baseKernel.length) {
+  // For sharpen kernel, generate any size
+  if (preset === 'sharpen') {
     const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
     const center = Math.floor(size / 2);
-    kernel[center][center] = 1;
+    kernel[center][center] = size * size;
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (i !== center || j !== center) {
+          kernel[i][j] = -1;
+        }
+      }
+    }
     return kernel;
   }
   
+  // For other kernels that have a fixed size, just return the base kernel regardless of requested size
+  // This ensures users always see the proper preset values instead of identity kernels
   return baseKernel;
 }

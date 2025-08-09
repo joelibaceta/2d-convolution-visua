@@ -134,7 +134,7 @@ export function KernelInspector({
                 ) : showValues ? (
                   <span 
                     className="font-mono text-xs font-medium"
-                    style={{ fontSize: `${Math.min(cellSize / 3.5, 7)}px` }}
+                    style={{ fontSize: `${Math.min(Math.max(cellSize / 4, 6), 8)}px` }}
                   >
                     {Math.abs(value) < 0.001 ? '0' : value.toFixed(1)}
                   </span>

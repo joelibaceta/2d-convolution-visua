@@ -5,6 +5,7 @@ import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
 import { KernelInspector } from '@/components/KernelInspector';
 import { AnimationControls } from '@/components/AnimationControls';
+import { generateCheckerboard } from '@/lib/sampleImages';
 import { 
   resizeTo64, 
   convolve2D, 
@@ -18,8 +19,8 @@ import {
 } from '@/lib/convolution';
 
 function App() {
-  // Core data
-  const [inputImage, setInputImage] = useKV<number[][]>('input-image', []);
+  // Initialize with a default sample image
+  const [inputImage, setInputImage] = useKV<number[][]>('input-image', generateCheckerboard());
   const [convolutionResult, setConvolutionResult] = useState<ConvolutionResult | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   
@@ -32,7 +33,7 @@ function App() {
   const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
   const [stride, setStride] = useKV('stride', 1);
   const [padding, setPadding] = useKV<PaddingType>('padding', 'none');
-  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'edge_detect');
+  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'sharpen');
   const [customKernel, setCustomKernel] = useState<number[][]>(() => {
     // Initialize with a 3x3 edge detection kernel as a more interesting default
     return [
@@ -61,7 +62,7 @@ function App() {
   
   // Recompute convolution when parameters change
   useEffect(() => {
-    if (inputImage.length === 0) {
+    if (!inputImage || inputImage.length === 0) {
       setConvolutionResult(null);
       setCurrentStepIndex(0);
       return;
@@ -151,7 +152,28 @@ function App() {
   
   const handleKernelSizeChange = useCallback((size: number) => {
     setKernelSize(size);
-    // When kernel size changes and we're using custom, generate a new kernel of that size with edge detection
+    
+    // If we're using a fixed-size preset that doesn't match the new size,
+    // switch to a scalable preset that makes sense
+    if (kernelPreset !== 'custom') {
+      const currentPresetSize = KERNEL_PRESETS[kernelPreset].kernel.length;
+      if (currentPresetSize !== size) {
+        // Switch to appropriate scalable presets based on the size
+        if (size === 1) {
+          setKernelPreset('identity');
+        } else {
+          // For larger sizes, use box_blur or edge_detect which scale well
+          if (kernelPreset === 'box_blur' || kernelPreset === 'identity' || kernelPreset === 'edge_detect') {
+            // Keep the current preset as it scales
+          } else {
+            // Switch to edge_detect as a good general purpose scalable kernel
+            setKernelPreset('edge_detect');
+          }
+        }
+      }
+    }
+    
+    // When kernel size changes and we're using custom, generate a new kernel of that size
     if (kernelPreset === 'custom') {
       if (size === 3) {
         // Use edge detection kernel for 3x3
@@ -168,7 +190,7 @@ function App() {
         setCustomKernel(newKernel);
       }
     }
-  }, [setKernelSize, kernelPreset]);
+  }, [setKernelSize, kernelPreset, setKernelPreset]);
   
   // Process output for display
   const displayOutput = convolutionResult ? (() => {
@@ -213,9 +235,10 @@ function App() {
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">2D Convolution Visualizer</h1>
           <p className="text-muted-foreground">
-            Upload an image and watch how convolution kernels transform it step by step.
+            Watch how convolution kernels transform images step by step. 
+            Try different presets, adjust parameters, or create custom kernels.
             <br />
-            <span className="text-accent">Select "Custom" preset to create your own image filters!</span>
+            <span className="text-accent font-medium">Click sample images below or upload your own to get started!</span>
           </p>
         </div>
         
@@ -248,48 +271,40 @@ function App() {
         />
         
         {/* Main visualization */}
-        {inputImage.length === 0 ? (
-          <div className="flex justify-center">
-            <ImageUploader onImageLoad={handleImageLoad} className="w-full max-w-md" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Input Image */}
-            <PixelGrid
-              data={inputImage}
-              title="Input Image"
-              highlightRegion={highlightRegion}
-              showValues={showInputValues}
-              cellSize={6}
-            />
-            
-            {/* Kernel Inspector */}
-            <KernelInspector
-              kernel={currentKernel}
-              currentStep={currentStep}
-              showValues={showKernelValues}
-              isEditable={kernelPreset === 'custom'}
-              onKernelChange={handleCustomKernelChange}
-            />
-            
-            {/* Output */}
-            <PixelGrid
-              data={displayOutput}
-              title="Output"
-              showValues={showOutputValues}
-              cellSize={convolutionResult ? Math.max(6, Math.min(12, 300 / Math.max(convolutionResult.outputDimensions.height, convolutionResult.outputDimensions.width))) : 6}
-              currentStep={currentStep}
-              showSumOverlay={true}
-            />
-          </div>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Input Image */}
+          <PixelGrid
+            data={inputImage}
+            title="Input Image"
+            highlightRegion={highlightRegion}
+            showValues={showInputValues}
+            cellSize={6}
+          />
+          
+          {/* Kernel Inspector */}
+          <KernelInspector
+            kernel={currentKernel}
+            currentStep={currentStep}
+            showValues={showKernelValues}
+            isEditable={kernelPreset === 'custom'}
+            onKernelChange={handleCustomKernelChange}
+          />
+          
+          {/* Output */}
+          <PixelGrid
+            data={displayOutput}
+            title="Output"
+            showValues={showOutputValues}
+            cellSize={convolutionResult ? Math.max(6, Math.min(12, 300 / Math.max(convolutionResult.outputDimensions.height, convolutionResult.outputDimensions.width))) : 6}
+            currentStep={currentStep}
+            showSumOverlay={true}
+          />
+        </div>
         
-        {/* Upload new image button */}
-        {inputImage.length > 0 && (
-          <div className="flex justify-center">
-            <ImageUploader onImageLoad={handleImageLoad} className="w-full max-w-md" />
-          </div>
-        )}
+        {/* Image controls */}
+        <div className="flex justify-center">
+          <ImageUploader onImageLoad={handleImageLoad} className="w-full max-w-md" />
+        </div>
         
         {/* Keyboard shortcuts hint */}
         <div className="text-center text-sm text-muted-foreground space-y-1">
