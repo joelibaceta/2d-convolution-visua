@@ -98,19 +98,7 @@ export function KernelInspector({
         )}
       </div>
 
-      {currentStep && (
-        <div className="bg-accent/20 rounded-lg p-3 text-center w-full">
-          <div className="text-xs text-muted-foreground mb-1">
-            Sum of products:
-          </div>
-          <div className="text-lg font-mono font-bold text-accent-foreground">
-            {currentStep.sum.toFixed(3)}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            → Output[{currentStep.outputRow}, {currentStep.outputCol}]
-          </div>
-        </div>
-      )}
+
 
       <div className="text-xs text-muted-foreground">
         {kernelSize}×{kernelSize}

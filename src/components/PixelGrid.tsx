@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { ConvolutionStep } from '@/lib/convolution';
 
 interface PixelGridProps {
   data: number[][];
@@ -14,6 +15,8 @@ interface PixelGridProps {
   showValues?: boolean;
   onPixelHover?: (row: number, col: number, value: number) => void;
   cellSize?: number;
+  currentStep?: ConvolutionStep;
+  showSumOverlay?: boolean;
 }
 
 export function PixelGrid({ 
@@ -23,7 +26,9 @@ export function PixelGrid({
   highlightRegion, 
   showValues = false,
   onPixelHover,
-  cellSize = 8
+  cellSize = 8,
+  currentStep,
+  showSumOverlay = false
 }: PixelGridProps) {
   const dimensions = useMemo(() => {
     if (!data.length) return { height: 0, width: 0 };
@@ -55,6 +60,22 @@ export function PixelGrid({
   return (
     <div className={cn("flex flex-col items-center", className)}>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      
+      {/* Sum of products overlay for output */}
+      {showSumOverlay && currentStep && (
+        <div className="bg-accent/20 rounded-lg p-2 mb-2 text-center w-full max-w-xs">
+          <div className="text-xs text-muted-foreground mb-1">
+            Sum of products:
+          </div>
+          <div className="text-lg font-mono font-bold text-accent-foreground">
+            {currentStep.sum.toFixed(3)}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            → Output[{currentStep.outputRow}, {currentStep.outputCol}]
+          </div>
+        </div>
+      )}
+      
       <div 
         className="relative border border-border rounded-lg p-2 bg-card"
         style={{

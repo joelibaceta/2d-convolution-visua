@@ -247,6 +247,8 @@ function App() {
               title="Output"
               showValues={showOutputValues}
               cellSize={convolutionResult ? Math.max(6, Math.min(12, 300 / Math.max(convolutionResult.outputDimensions.height, convolutionResult.outputDimensions.width))) : 6}
+              currentStep={currentStep}
+              showSumOverlay={true}
             />
           </div>
         )}
