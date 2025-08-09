@@ -1,4 +1,4 @@
-import { Play, Pause, SkipForward, RotateCounterClockwise } from '@phosphor-icons/react';
+import { Play, Pause, SkipForward, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -110,7 +110,7 @@ export function AnimationControls({
               size="sm"
               onClick={onReset}
             >
-              <RotateCounterClockwise className="w-4 h-4" />
+              <ArrowCounterClockwise className="w-4 h-4" />
             </Button>
           </div>
           <div className="space-y-2">

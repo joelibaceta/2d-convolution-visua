@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { ConvolutionStep } from '@/lib/convolution';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit, Check, X } from '@phosphor-icons/react';
+import { Pencil, Check, X } from '@phosphor-icons/react';
 
 interface KernelInspectorProps {
   kernel: number[][];
@@ -90,7 +90,7 @@ export function KernelInspector({
             className="h-5 w-5 p-0 hover:bg-accent/20"
             title="Edit kernel values"
           >
-            <Edit className="h-3 w-3 text-accent" />
+            <Pencil className="h-3 w-3 text-accent" />
           </Button>
         )}
       </div>
