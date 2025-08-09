@@ -1,23 +1,56 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# 2D Convolution Visualizer
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+Este repositorio contiene una aplicación interactiva que **visualiza cómo funcionan las convoluciones en 2D** sobre imágenes.  
+Permite:
+- Subir una imagen y reducirla automáticamente a **64×64 píxeles**.
+- Configurar **tamaño del kernel**, **stride** y **padding**.
+- Ver paso a paso cómo se aplica la convolución, resaltando el área del kernel y mostrando el resultado en la salida **pixel por pixel**.
+- Explorar diferentes **kernels predefinidos** o personalizarlos.
+- Observar el resultado final en un grid de salida, junto con los valores intermedios.
 
-🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
-  
-🧠 What Can You Do?
+---
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+## 🚀 Creado con GitHub Spark
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+Todo el código de este repositorio fue **generado al 100% usando [GitHub Spark](https://github.com/features/spark?locale=es-419)**, aprovechando su capacidad para transformar ideas en proyectos completos sin escribir código manualmente.
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
+---
 
-📄 License For Spark Template Resources 
+## 📦 Despliegue automático con GitHub Copilot
 
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+El flujo de **build y publicación en GitHub Pages** fue configurado con ayuda de **GitHub Copilot**.  
+El resultado se puede ver en vivo aquí:  
+🔗 **[Demo en GitHub Pages](https://joelibaceta.github.io/2d-convolution-visua/)**
+
+La sesión exacta donde el agente configuró el despliegue está registrada en:  
+🔗 **[Sesión del agente en PR #7](https://github.com/joelibaceta/2d-convolution-visua/pull/7/agent-sessions/b7c1a515-f51f-4ab9-8119-41f06f6e13b6)**
+
+---
+
+## 📂 Estructura principal
+```
+src/
+components/       # Componentes UI (grids, controles, inspector de kernel)
+lib/              # Lógica matemática y utilidades puras
+App.tsx           # Punto de entrada principal
+index.css         # Estilos globales (Tailwind)
+index.html
+```
+
+---
+
+## 🛠️ Cómo ejecutarlo localmente
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/joelibaceta/2d-convolution-visua.git
+cd 2d-convolution-visua
+
+# Instalar dependencias
+npm install
+
+# Ejecutar en modo desarrollo
+npm run dev
+```
+
+
