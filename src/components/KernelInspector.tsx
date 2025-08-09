@@ -16,7 +16,7 @@ export function KernelInspector({
   className 
 }: KernelInspectorProps) {
   const kernelSize = kernel.length;
-  const cellSize = Math.max(32, Math.min(48, 200 / kernelSize));
+  const cellSize = Math.max(20, Math.min(32, 150 / kernelSize));
 
   const maxKernelValue = useMemo(() => {
     return Math.max(...kernel.flat().map(Math.abs));
@@ -28,7 +28,7 @@ export function KernelInspector({
     colorMode: 'kernel' | 'input' | 'product'
   ) => (
     <div className="flex flex-col items-center">
-      <h4 className="text-sm font-medium mb-2">{title}</h4>
+      <h4 className="text-xs font-medium mb-1">{title}</h4>
       <div 
         className="border border-border rounded p-1 bg-card"
         style={{
@@ -70,9 +70,9 @@ export function KernelInspector({
                 {showValues && (
                   <span 
                     className="font-mono text-xs font-medium"
-                    style={{ fontSize: `${Math.min(cellSize / 4, 10)}px` }}
+                    style={{ fontSize: `${Math.min(cellSize / 3.5, 8)}px` }}
                   >
-                    {Math.abs(value) < 0.001 ? '0' : value.toFixed(2)}
+                    {Math.abs(value) < 0.001 ? '0' : value.toFixed(1)}
                   </span>
                 )}
               </div>
@@ -84,10 +84,10 @@ export function KernelInspector({
   );
 
   return (
-    <div className={cn("flex flex-col items-center space-y-4", className)}>
+    <div className={cn("flex flex-col items-center space-y-3", className)}>
       <h3 className="text-lg font-semibold">Kernel Inspector</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex flex-col gap-3">
         {renderGrid("Kernel", kernel, 'kernel')}
         
         {currentStep && (
@@ -99,11 +99,11 @@ export function KernelInspector({
       </div>
 
       {currentStep && (
-        <div className="bg-accent/20 rounded-lg p-4 text-center">
-          <div className="text-sm text-muted-foreground mb-1">
+        <div className="bg-accent/20 rounded-lg p-3 text-center w-full">
+          <div className="text-xs text-muted-foreground mb-1">
             Sum of products:
           </div>
-          <div className="text-xl font-mono font-bold text-accent-foreground">
+          <div className="text-lg font-mono font-bold text-accent-foreground">
             {currentStep.sum.toFixed(3)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
@@ -112,7 +112,7 @@ export function KernelInspector({
         </div>
       )}
 
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         {kernelSize}×{kernelSize}
       </div>
     </div>
