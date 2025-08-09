@@ -3,6 +3,7 @@ import { useKV } from '@github/spark/hooks';
 import { Edit } from '@phosphor-icons/react';
 import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
+import { PaddedPixelGrid } from '@/components/PaddedPixelGrid';
 import { KernelInspector } from '@/components/KernelInspector';
 import { AnimationControls } from '@/components/AnimationControls';
 import { generateCheckerboard } from '@/lib/sampleImages';
@@ -12,12 +13,14 @@ import {
   generateKernel, 
   normalizeOutput as normalizeOutputValues, 
   clampOutput,
+  applyPadding,
   KERNEL_PRESETS,
   PaddingType,
   ConvolutionResult,
   ConvolutionStep 
 } from '@/lib/convolution';
 import { testConvolutionDimensions, testSquareConvolution, testReflectPadding, testRequiredCases } from '@/lib/convolution.test';
+import { testPaddingVisualization, validateHighlightingLogic } from '@/lib/padding-visualization.test';
 
 function App() {
   // Run tests in development
@@ -56,6 +59,10 @@ function App() {
       testSquareConvolution();
       testReflectPadding();
       testRequiredCases();
+      
+      // Test our new padding visualization system
+      testPaddingVisualization();
+      validateHighlightingLogic();
     }
   }, []);
   // Initialize with a default sample image
@@ -243,36 +250,28 @@ function App() {
     );
   })() : [];
   
-  const highlightRegion = currentStep && inputImage.length > 0 ? (() => {
+  const highlightRegion = currentStep && inputImage.length > 0 && convolutionResult ? (() => {
     const kernelHeight = currentKernel.length;
     const kernelWidth = currentKernel[0]?.length || 0;
     
-    // The currentStep.position is already calculated relative to the original input
-    // (accounting for padding offset in the convolution function)
-    const kernelRow = currentStep.position.row;
-    const kernelCol = currentStep.position.col;
+    // The currentStep.position is relative to the original input, but we need coordinates
+    // relative to the padded input for proper highlighting
+    const { paddingValues } = convolutionResult;
     
-    // Calculate the intersection of the kernel with the visible input region
-    const startRow = Math.max(0, kernelRow);
-    const startCol = Math.max(0, kernelCol);
-    const endRow = Math.min(inputImage.length, kernelRow + kernelHeight);
-    const endCol = Math.min(inputImage[0].length, kernelCol + kernelWidth);
+    // Convert from original coordinates to padded coordinates
+    const paddedRow = currentStep.position.row + paddingValues.top;
+    const paddedCol = currentStep.position.col + paddingValues.left;
     
-    // Only create highlight if there's a visible region
-    if (startRow < endRow && startCol < endCol && 
-        startRow < inputImage.length && startCol < inputImage[0].length) {
-      
-      const region = {
-        startRow,
-        startCol,
-        height: endRow - startRow,
-        width: endCol - startCol
-      };
-      
-      return region;
-    }
+    // The highlight region should always show the full kernel size
+    // No clamping - show the full kernel area even if it extends beyond original boundaries
+    const region = {
+      startRow: paddedRow,
+      startCol: paddedCol,
+      height: kernelHeight,
+      width: kernelWidth
+    };
     
-    return undefined;
+    return region;
   })() : undefined;
   
   return (
@@ -320,13 +319,24 @@ function App() {
         {/* Main visualization */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Input Image */}
-          <PixelGrid
-            data={inputImage}
-            title="Input Image"
-            highlightRegion={highlightRegion}
-            showValues={showInputValues}
-            cellSize={6}
-          />
+          {convolutionResult ? (
+            <PaddedPixelGrid
+              originalData={inputImage}
+              paddedData={applyPadding(inputImage, convolutionResult.paddingValues, padding)}
+              paddingValues={convolutionResult.paddingValues}
+              title="Input Image"
+              highlightRegion={highlightRegion}
+              showValues={showInputValues}
+              cellSize={6}
+            />
+          ) : (
+            <PixelGrid
+              data={inputImage}
+              title="Input Image"
+              showValues={showInputValues}
+              cellSize={6}
+            />
+          )}
           
           {/* Kernel Inspector */}
           <KernelInspector
