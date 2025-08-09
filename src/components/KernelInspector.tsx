@@ -1,0 +1,120 @@
+import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { ConvolutionStep } from '@/lib/convolution';
+
+interface KernelInspectorProps {
+  kernel: number[][];
+  currentStep?: ConvolutionStep;
+  showValues?: boolean;
+  className?: string;
+}
+
+export function KernelInspector({ 
+  kernel, 
+  currentStep, 
+  showValues = true, 
+  className 
+}: KernelInspectorProps) {
+  const kernelSize = kernel.length;
+  const cellSize = Math.max(32, Math.min(48, 200 / kernelSize));
+
+  const maxKernelValue = useMemo(() => {
+    return Math.max(...kernel.flat().map(Math.abs));
+  }, [kernel]);
+
+  const renderGrid = (
+    title: string, 
+    data: number[][], 
+    colorMode: 'kernel' | 'input' | 'product'
+  ) => (
+    <div className="flex flex-col items-center">
+      <h4 className="text-sm font-medium mb-2">{title}</h4>
+      <div 
+        className="border border-border rounded p-1 bg-card"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${kernelSize}, ${cellSize}px)`,
+          gridTemplateRows: `repeat(${kernelSize}, ${cellSize}px)`,
+          gap: '1px'
+        }}
+      >
+        {data.map((row, i) =>
+          row.map((value, j) => {
+            let backgroundColor = '#f8fafc';
+            let textColor = '#0f172a';
+
+            if (colorMode === 'kernel') {
+              const intensity = maxKernelValue > 0 ? Math.abs(value) / maxKernelValue : 0;
+              const hue = value >= 0 ? '210' : '0'; // Blue for positive, red for negative
+              backgroundColor = `hsl(${hue}, 60%, ${90 - intensity * 40}%)`;
+              textColor = intensity > 0.7 ? '#ffffff' : '#0f172a';
+            } else if (colorMode === 'input' || colorMode === 'product') {
+              const normalizedValue = Math.max(0, Math.min(255, value)) / 255;
+              const grayValue = Math.round(normalizedValue * 255);
+              backgroundColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+              textColor = normalizedValue > 0.5 ? '#000000' : '#ffffff';
+            }
+
+            return (
+              <div
+                key={`${i}-${j}`}
+                className="flex items-center justify-center relative transition-colors duration-200"
+                style={{
+                  width: `${cellSize}px`,
+                  height: `${cellSize}px`,
+                  backgroundColor,
+                  color: textColor
+                }}
+                title={`(${j}, ${i}): ${value.toFixed(3)}`}
+              >
+                {showValues && (
+                  <span 
+                    className="font-mono text-xs font-medium"
+                    style={{ fontSize: `${Math.min(cellSize / 4, 10)}px` }}
+                  >
+                    {Math.abs(value) < 0.001 ? '0' : value.toFixed(2)}
+                  </span>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className={cn("flex flex-col items-center space-y-4", className)}>
+      <h3 className="text-lg font-semibold">Kernel Inspector</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {renderGrid("Kernel", kernel, 'kernel')}
+        
+        {currentStep && (
+          <>
+            {renderGrid("Input Patch", currentStep.inputPatch, 'input')}
+            {renderGrid("Element-wise Product", currentStep.elementWiseProducts, 'product')}
+          </>
+        )}
+      </div>
+
+      {currentStep && (
+        <div className="bg-accent/20 rounded-lg p-4 text-center">
+          <div className="text-sm text-muted-foreground mb-1">
+            Sum of products:
+          </div>
+          <div className="text-xl font-mono font-bold text-accent-foreground">
+            {currentStep.sum.toFixed(3)}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            → Output[{currentStep.outputRow}, {currentStep.outputCol}]
+          </div>
+        </div>
+      )}
+
+      <div className="text-sm text-muted-foreground">
+        {kernelSize}×{kernelSize}
+      </div>
+    </div>
+  );
+}
