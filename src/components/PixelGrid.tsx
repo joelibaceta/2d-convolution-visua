@@ -85,14 +85,14 @@ export function PixelGrid({
             return (
               <div
                 key={`${i}-${j}`}
-                className={cn(
-                  "relative transition-all duration-100 cursor-pointer",
-                  isHighlighted && "ring-2 ring-orange-500 ring-inset z-10"
-                )}
+                className="relative cursor-pointer"
                 style={{
                   width: `${cellSize}px`,
                   height: `${cellSize}px`,
                   backgroundColor: `rgb(${Math.round(normalizedValue * 255)}, ${Math.round(normalizedValue * 255)}, ${Math.round(normalizedValue * 255)})`,
+                  border: isHighlighted ? '2px solid #f97316' : 'none',
+                  boxSizing: 'border-box',
+                  zIndex: isHighlighted ? 10 : 'auto'
                 }}
                 onMouseEnter={() => onPixelHover?.(i, j, value)}
                 title={`(${j}, ${i}): ${value.toFixed(2)}`}
