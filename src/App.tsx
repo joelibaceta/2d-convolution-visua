@@ -17,8 +17,16 @@ import {
   ConvolutionResult,
   ConvolutionStep 
 } from '@/lib/convolution';
+import { testConvolutionDimensions, testSquareConvolution } from '@/lib/convolution.test';
 
 function App() {
+  // Run tests in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      testConvolutionDimensions();
+      testSquareConvolution();
+    }
+  }, []);
   // Initialize with a default sample image
   const [inputImage, setInputImage] = useKV<number[][]>('input-image', generateCheckerboard());
   const [convolutionResult, setConvolutionResult] = useState<ConvolutionResult | null>(null);
@@ -208,22 +216,21 @@ function App() {
     const kernelHeight = currentKernel.length;
     const kernelWidth = currentKernel[0]?.length || 0;
     
-    // Don't show highlight if kernel position is completely outside the input bounds
-    if (currentStep.position.row >= inputImage.length || 
-        currentStep.position.col >= inputImage[0].length ||
-        currentStep.position.row + kernelHeight <= 0 ||
-        currentStep.position.col + kernelWidth <= 0) {
-      return undefined;
-    }
+    // The currentStep.position is already calculated relative to the original input
+    // (accounting for padding offset in the convolution function)
+    const kernelRow = currentStep.position.row;
+    const kernelCol = currentStep.position.col;
     
-    const startRow = Math.max(0, currentStep.position.row);
-    const startCol = Math.max(0, currentStep.position.col);
-    const endRow = Math.min(inputImage.length, currentStep.position.row + kernelHeight);
-    const endCol = Math.min(inputImage[0].length, currentStep.position.col + kernelWidth);
+    // Calculate the intersection of the kernel with the visible input region
+    const startRow = Math.max(0, kernelRow);
+    const startCol = Math.max(0, kernelCol);
+    const endRow = Math.min(inputImage.length, kernelRow + kernelHeight);
+    const endCol = Math.min(inputImage[0].length, kernelCol + kernelWidth);
     
-    // Only create highlight if there's a visible region with valid dimensions
-    if (startRow < inputImage.length && startCol < inputImage[0].length && 
-        endRow > startRow && endCol > startCol) {
+    // Only create highlight if there's a visible region
+    if (startRow < endRow && startCol < endCol && 
+        startRow < inputImage.length && startCol < inputImage[0].length) {
+      
       const region = {
         startRow,
         startCol,
@@ -231,13 +238,9 @@ function App() {
         width: endCol - startCol
       };
       
-      // Debug logging to verify square highlights for square kernels
-      if (kernelHeight === kernelWidth && region.height !== region.width) {
-        console.warn(`Highlight not square: kernel ${kernelHeight}x${kernelWidth}, highlight ${region.height}x${region.width} at position (${currentStep.position.row}, ${currentStep.position.col})`);
-      }
-      
       return region;
     }
+    
     return undefined;
   })() : undefined;
   
