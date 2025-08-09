@@ -112,13 +112,13 @@ export function PixelGrid({
                 onMouseEnter={() => onPixelHover?.(i, j, value)}
                 title={`(${j}, ${i}): ${value.toFixed(2)}`}
               >
-                {showValues && cellSize >= 20 && (
+                {showValues && cellSize >= 12 && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span 
                       className="text-xs font-mono leading-none"
                       style={{
                         color: normalizedValue > 0.5 ? '#000000' : '#ffffff',
-                        fontSize: `${Math.min(cellSize / 3, 10)}px`
+                        fontSize: `${Math.min(cellSize / 2.5, 10)}px`
                       }}
                     >
                       {Math.round(value)}

@@ -184,6 +184,7 @@ export function AnimationControls({
               {Object.entries(KERNEL_PRESETS).map(([key, preset]) => (
                 <SelectItem key={key} value={key}>{preset.name}</SelectItem>
               ))}
+              <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
           <div className="flex items-center space-x-2">

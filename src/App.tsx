@@ -31,8 +31,15 @@ function App() {
   const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
   const [stride, setStride] = useKV('stride', 1);
   const [padding, setPadding] = useKV<PaddingType>('padding', 'none');
-  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'identity');
-  const [customKernel, setCustomKernel] = useState<number[][]>([[1]]);
+  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'box_blur');
+  const [customKernel, setCustomKernel] = useState<number[][]>(() => {
+    // Initialize with a 3x3 box blur as default instead of empty
+    return [
+      [1/9, 1/9, 1/9],
+      [1/9, 1/9, 1/9],
+      [1/9, 1/9, 1/9]
+    ];
+  });
   
   // Display options
   const [showInputValues, setShowInputValues] = useKV('show-input-values', false);
@@ -128,8 +135,15 @@ function App() {
   
   const handleKernelPresetChange = useCallback((preset: keyof typeof KERNEL_PRESETS | 'custom') => {
     setKernelPreset(preset);
-    // Don't auto-change kernel size when selecting presets - let user control it
-  }, [setKernelPreset]);
+    // When switching to custom, initialize with current kernel
+    if (preset === 'custom') {
+      setCustomKernel(currentKernel.map(row => [...row]));
+    }
+  }, [setKernelPreset, currentKernel]);
+  
+  const handleCustomKernelChange = useCallback((newKernel: number[][]) => {
+    setCustomKernel(newKernel);
+  }, []);
   
   const handleKernelSizeChange = useCallback((size: number) => {
     setKernelSize(size);
@@ -239,6 +253,8 @@ function App() {
               kernel={currentKernel}
               currentStep={currentStep}
               showValues={showKernelValues}
+              isEditable={kernelPreset === 'custom'}
+              onKernelChange={handleCustomKernelChange}
             />
             
             {/* Output */}
