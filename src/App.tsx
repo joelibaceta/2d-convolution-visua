@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useKV } from '@github/spark/hooks';
 import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
@@ -40,8 +40,10 @@ function App() {
   const [showOutputValues, setShowOutputValues] = useKV('show-output-values', false);
   const [normalizeOutput, setNormalizeOutput] = useKV('normalize-output', false);
   
-  // Current kernel
-  const currentKernel = kernelPreset === 'custom' ? customKernel : generateKernel(kernelPreset);
+  // Current kernel - memoized to prevent infinite re-renders
+  const currentKernel = useMemo(() => {
+    return kernelPreset === 'custom' ? customKernel : generateKernel(kernelPreset);
+  }, [kernelPreset, customKernel]);
   
   // Current step data
   const currentStep = convolutionResult?.steps[currentStepIndex];
