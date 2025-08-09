@@ -81,22 +81,6 @@ function App() {
     };
   }, [isPlaying, currentStepIndex, convolutionResult, animationSpeed]);
   
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        handlePlayPause();
-      } else if (e.code === 'KeyN') {
-        e.preventDefault();
-        handleStep();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [handlePlayPause, handleStep]);
-  
   const handleImageLoad = useCallback((imageData: ImageData) => {
     const resized = resizeTo64(imageData);
     setInputImage(resized);
@@ -118,6 +102,22 @@ function App() {
       Math.min(prev + 1, convolutionResult.steps.length - 1)
     );
   }, [convolutionResult, isPlaying]);
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handlePlayPause();
+      } else if (e.code === 'KeyN') {
+        e.preventDefault();
+        handleStep();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [handlePlayPause, handleStep]);
   
   const handleReset = useCallback(() => {
     setCurrentStepIndex(0);
