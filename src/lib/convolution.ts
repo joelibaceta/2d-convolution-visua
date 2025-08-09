@@ -241,6 +241,35 @@ export function clampOutput(output: number[][]): number[][] {
   );
 }
 
-export function generateKernel(preset: keyof typeof KERNEL_PRESETS): number[][] {
-  return KERNEL_PRESETS[preset].kernel.map(row => [...row]);
+export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: number): number[][] {
+  const baseKernel = KERNEL_PRESETS[preset].kernel.map(row => [...row]);
+  
+  // If no size specified or size matches the preset, return the base kernel
+  if (!size || size === baseKernel.length) {
+    return baseKernel;
+  }
+  
+  // For identity kernel, generate any size
+  if (preset === 'identity') {
+    const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
+    const center = Math.floor(size / 2);
+    kernel[center][center] = 1;
+    return kernel;
+  }
+  
+  // For box blur, generate any size
+  if (preset === 'box_blur') {
+    const value = 1 / (size * size);
+    return Array(size).fill(0).map(() => Array(size).fill(value));
+  }
+  
+  // For other kernels, if different size requested, fall back to identity
+  if (size !== baseKernel.length) {
+    const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
+    const center = Math.floor(size / 2);
+    kernel[center][center] = 1;
+    return kernel;
+  }
+  
+  return baseKernel;
 }

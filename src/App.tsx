@@ -42,8 +42,8 @@ function App() {
   
   // Current kernel - memoized to prevent infinite re-renders
   const currentKernel = useMemo(() => {
-    return kernelPreset === 'custom' ? customKernel : generateKernel(kernelPreset);
-  }, [kernelPreset, customKernel]);
+    return kernelPreset === 'custom' ? customKernel : generateKernel(kernelPreset, kernelSize);
+  }, [kernelPreset, customKernel, kernelSize]);
   
   // Current step data
   const currentStep = convolutionResult?.steps[currentStepIndex];
@@ -128,11 +128,20 @@ function App() {
   
   const handleKernelPresetChange = useCallback((preset: keyof typeof KERNEL_PRESETS | 'custom') => {
     setKernelPreset(preset);
-    if (preset !== 'custom') {
-      const newKernel = generateKernel(preset);
-      setKernelSize(newKernel.length);
+    // Don't auto-change kernel size when selecting presets - let user control it
+  }, [setKernelPreset]);
+  
+  const handleKernelSizeChange = useCallback((size: number) => {
+    setKernelSize(size);
+    // When kernel size changes and we're using custom, generate identity kernel of that size
+    if (kernelPreset === 'custom') {
+      const newKernel = Array(size).fill(0).map(() => Array(size).fill(0));
+      // Put 1 in the center for identity
+      const center = Math.floor(size / 2);
+      newKernel[center][center] = 1;
+      setCustomKernel(newKernel);
     }
-  }, [setKernelPreset, setKernelSize]);
+  }, [setKernelSize, kernelPreset]);
   
   // Process output for display
   const displayOutput = convolutionResult ? (() => {
@@ -190,7 +199,7 @@ function App() {
           animationSpeed={animationSpeed}
           onAnimationSpeedChange={setAnimationSpeed}
           kernelSize={kernelSize}
-          onKernelSizeChange={setKernelSize}
+          onKernelSizeChange={handleKernelSizeChange}
           stride={stride}
           onStrideChange={setStride}
           padding={padding}
