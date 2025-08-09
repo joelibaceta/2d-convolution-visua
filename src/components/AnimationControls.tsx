@@ -47,9 +47,11 @@ interface AnimationControlsProps {
 const KERNEL_SIZES = [1, 3, 5, 7, 9];
 const STRIDES = [1, 2, 3, 4];
 const PADDING_OPTIONS: { value: PaddingType; label: string }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'zero', label: 'Zero' },
-  { value: 'reflect', label: 'Reflect' }
+  { value: 'valid', label: 'Valid (no padding)' },
+  { value: 'zero', label: 'Zero padding' },
+  { value: 'reflect', label: 'Reflect padding' },
+  { value: 'replicate', label: 'Replicate padding' },
+  { value: 'same', label: 'Same padding' }
 ];
 
 export function AnimationControls({

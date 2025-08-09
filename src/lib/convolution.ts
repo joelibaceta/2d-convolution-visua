@@ -1,4 +1,11 @@
-export type PaddingType = 'none' | 'zero' | 'reflect';
+export type PaddingType = 'valid' | 'zero' | 'reflect' | 'replicate' | 'same';
+
+export interface PaddingValues {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
 
 export interface ConvolutionStep {
   position: { row: number; col: number };
@@ -14,6 +21,7 @@ export interface ConvolutionResult {
   output: number[][];
   steps: ConvolutionStep[];
   outputDimensions: { height: number; width: number };
+  paddingValues: PaddingValues;
 }
 
 export const KERNEL_PRESETS = {
@@ -79,59 +87,207 @@ export const KERNEL_PRESETS = {
   }
 };
 
+/**
+ * Calculate padding values based on padding type and parameters
+ */
+export function calculatePadding(
+  inputHeight: number,
+  inputWidth: number,
+  kernelHeight: number,
+  kernelWidth: number,
+  strideH: number,
+  strideW: number,
+  padding: PaddingType
+): PaddingValues {
+  if (padding === 'valid') {
+    return { top: 0, bottom: 0, left: 0, right: 0 };
+  }
+  
+  if (padding === 'same') {
+    // "Same" output helper: calculate padding to maintain input size
+    const outHeight = Math.ceil(inputHeight / strideH);
+    const outWidth = Math.ceil(inputWidth / strideW);
+    
+    const padTotalH = Math.max((outHeight - 1) * strideH + kernelHeight - inputHeight, 0);
+    const padTotalW = Math.max((outWidth - 1) * strideW + kernelWidth - inputWidth, 0);
+    
+    const padTop = Math.floor(padTotalH / 2);
+    const padBottom = padTotalH - padTop;
+    const padLeft = Math.floor(padTotalW / 2);
+    const padRight = padTotalW - padLeft;
+    
+    return { top: padTop, bottom: padBottom, left: padLeft, right: padRight };
+  }
+  
+  // For zero, reflect, replicate: use symmetric padding of kernel_size // 2
+  const padH = Math.floor(kernelHeight / 2);
+  const padW = Math.floor(kernelWidth / 2);
+  
+  return { top: padH, bottom: padH, left: padW, right: padW };
+}
+
+/**
+ * Calculate output dimensions using exact mathematical formula
+ */
 export function calculateOutputDimensions(
   inputHeight: number,
   inputWidth: number,
-  kernelSize: number,
-  stride: number,
-  padding: PaddingType
+  kernelHeight: number,
+  kernelWidth: number,
+  strideH: number,
+  strideW: number,
+  paddingValues: PaddingValues
 ): { height: number; width: number } {
-  const paddingSize = padding === 'none' ? 0 : Math.floor(kernelSize / 2);
+  // H_out = floor((H + padT + padB - kH)/sH) + 1
+  // W_out = floor((W + padL + padR - kW)/sW) + 1
+  const height = Math.floor(
+    (inputHeight + paddingValues.top + paddingValues.bottom - kernelHeight) / strideH
+  ) + 1;
   
-  const height = Math.floor((inputHeight + 2 * paddingSize - kernelSize) / stride) + 1;
-  const width = Math.floor((inputWidth + 2 * paddingSize - kernelSize) / stride) + 1;
+  const width = Math.floor(
+    (inputWidth + paddingValues.left + paddingValues.right - kernelWidth) / strideW
+  ) + 1;
   
   return { height: Math.max(1, height), width: Math.max(1, width) };
 }
 
-export function applyPadding(input: number[][], padding: PaddingType, kernelSize: number): number[][] {
-  if (padding === 'none') {
-    return input;
-  }
-  
-  const padSize = Math.floor(kernelSize / 2);
+/**
+ * Apply padding to input image according to padding mode
+ */
+export function applyPadding(
+  input: number[][],
+  paddingValues: PaddingValues,
+  paddingMode: PaddingType
+): number[][] {
+  const { top, bottom, left, right } = paddingValues;
   const height = input.length;
   const width = input[0].length;
   
-  const padded = Array(height + 2 * padSize).fill(0).map(() => Array(width + 2 * padSize).fill(0));
+  // If no padding, return original
+  if (top === 0 && bottom === 0 && left === 0 && right === 0) {
+    return input;
+  }
   
-  // Copy original data
+  const paddedHeight = height + top + bottom;
+  const paddedWidth = width + left + right;
+  const padded = Array(paddedHeight).fill(0).map(() => Array(paddedWidth).fill(0));
+  
+  // Copy original data to center
   for (let i = 0; i < height; i++) {
     for (let j = 0; j < width; j++) {
-      padded[i + padSize][j + padSize] = input[i][j];
+      padded[i + top][j + left] = input[i][j];
     }
   }
   
-  if (padding === 'zero') {
+  if (paddingMode === 'zero') {
+    // Already initialized with zeros
     return padded;
   }
   
-  if (padding === 'reflect') {
-    // Top and bottom borders
-    for (let i = 0; i < padSize; i++) {
-      for (let j = padSize; j < width + padSize; j++) {
-        padded[i][j] = padded[2 * padSize - i][j]; // Top
-        padded[height + padSize + i][j] = padded[height + padSize - i - 2][j]; // Bottom
+  if (paddingMode === 'reflect') {
+    // Reflect mode: mirror around the edge without repeating edge pixel
+    // ...3,2,1 | 1,2,3 | 3,2,1...
+    
+    // Top padding
+    for (let i = 0; i < top; i++) {
+      for (let j = left; j < left + width; j++) {
+        const sourceRow = top + (top - 1 - i);
+        if (sourceRow < top + height) {
+          padded[i][j] = padded[sourceRow][j];
+        }
       }
     }
     
-    // Left and right borders
-    for (let i = 0; i < height + 2 * padSize; i++) {
-      for (let j = 0; j < padSize; j++) {
-        padded[i][j] = padded[i][2 * padSize - j]; // Left
-        padded[i][width + padSize + j] = padded[i][width + padSize - j - 2]; // Right
+    // Bottom padding
+    for (let i = top + height; i < paddedHeight; i++) {
+      for (let j = left; j < left + width; j++) {
+        const sourceRow = top + height - 1 - (i - (top + height));
+        if (sourceRow >= top) {
+          padded[i][j] = padded[sourceRow][j];
+        }
       }
     }
+    
+    // Left padding (including corners)
+    for (let i = 0; i < paddedHeight; i++) {
+      for (let j = 0; j < left; j++) {
+        const sourceCol = left + (left - 1 - j);
+        if (sourceCol < left + width) {
+          padded[i][j] = padded[i][sourceCol];
+        }
+      }
+    }
+    
+    // Right padding (including corners)
+    for (let i = 0; i < paddedHeight; i++) {
+      for (let j = left + width; j < paddedWidth; j++) {
+        const sourceCol = left + width - 1 - (j - (left + width));
+        if (sourceCol >= left) {
+          padded[i][j] = padded[i][sourceCol];
+        }
+      }
+    }
+    
+    return padded;
+  }
+  
+  if (paddingMode === 'replicate') {
+    // Replicate mode: extend by repeating edge pixel
+    
+    // Fill corners first
+    // Top-left corner
+    for (let i = 0; i < top; i++) {
+      for (let j = 0; j < left; j++) {
+        padded[i][j] = input[0][0];
+      }
+    }
+    
+    // Top-right corner
+    for (let i = 0; i < top; i++) {
+      for (let j = left + width; j < paddedWidth; j++) {
+        padded[i][j] = input[0][width - 1];
+      }
+    }
+    
+    // Bottom-left corner
+    for (let i = top + height; i < paddedHeight; i++) {
+      for (let j = 0; j < left; j++) {
+        padded[i][j] = input[height - 1][0];
+      }
+    }
+    
+    // Bottom-right corner
+    for (let i = top + height; i < paddedHeight; i++) {
+      for (let j = left + width; j < paddedWidth; j++) {
+        padded[i][j] = input[height - 1][width - 1];
+      }
+    }
+    
+    // Top and bottom edges
+    for (let i = 0; i < top; i++) {
+      for (let j = left; j < left + width; j++) {
+        padded[i][j] = input[0][j - left];
+      }
+    }
+    for (let i = top + height; i < paddedHeight; i++) {
+      for (let j = left; j < left + width; j++) {
+        padded[i][j] = input[height - 1][j - left];
+      }
+    }
+    
+    // Left and right edges
+    for (let i = top; i < top + height; i++) {
+      for (let j = 0; j < left; j++) {
+        padded[i][j] = input[i - top][0];
+      }
+    }
+    for (let i = top; i < top + height; i++) {
+      for (let j = left + width; j < paddedWidth; j++) {
+        padded[i][j] = input[i - top][width - 1];
+      }
+    }
+    
+    return padded;
   }
   
   return padded;
@@ -141,69 +297,79 @@ export function convolve2D(
   input: number[][],
   kernel: number[][],
   stride: number = 1,
-  padding: PaddingType = 'none'
+  padding: PaddingType = 'valid'
 ): ConvolutionResult {
-  const kernelSize = kernel.length;
-  const paddedInput = applyPadding(input, padding, kernelSize);
+  const kernelHeight = kernel.length;
+  const kernelWidth = kernel[0].length;
+  const inputHeight = input.length;
+  const inputWidth = input[0].length;
   
-  const outputDims = calculateOutputDimensions(input.length, input[0].length, kernelSize, stride, padding);
+  // Calculate padding values
+  const paddingValues = calculatePadding(
+    inputHeight, inputWidth, kernelHeight, kernelWidth, stride, stride, padding
+  );
+  
+  // Apply padding to input
+  const paddedInput = applyPadding(input, paddingValues, padding);
+  
+  // Calculate output dimensions using padded input
+  const outputDims = calculateOutputDimensions(
+    inputHeight, inputWidth, kernelHeight, kernelWidth, stride, stride, paddingValues
+  );
+  
   const output: number[][] = Array(outputDims.height).fill(0).map(() => Array(outputDims.width).fill(0));
   const steps: ConvolutionStep[] = [];
   
-  let outputRow = 0;
-  let outputCol = 0;
+  // Perform convolution
+  // Index windows as: top = i * stride, left = j * stride
+  // patch = paddedInput[top : top+kernelHeight, left : left+kernelWidth]
   
-  // Calculate the maximum valid starting positions for kernel placement
-  const maxRowStart = paddedInput.length - kernelSize;
-  const maxColStart = paddedInput[0].length - kernelSize;
-  
-  for (let i = 0; i <= maxRowStart; i += stride) {
-    outputCol = 0;
-    for (let j = 0; j <= maxColStart; j += stride) {
-      if (outputRow >= outputDims.height || outputCol >= outputDims.width) break;
+  for (let i = 0; i < outputDims.height; i++) {
+    for (let j = 0; j < outputDims.width; j++) {
+      const top = i * stride;
+      const left = j * stride;
       
-      // Extract input patch
-      const inputPatch: number[][] = [];
-      const elementWiseProducts: number[][] = [];
-      let sum = 0;
-      
-      for (let ki = 0; ki < kernelSize; ki++) {
-        inputPatch[ki] = [];
-        elementWiseProducts[ki] = [];
-        for (let kj = 0; kj < kernelSize; kj++) {
-          const inputVal = paddedInput[i + ki][j + kj];
-          const kernelVal = kernel[ki][kj];
-          const product = inputVal * kernelVal;
-          
-          inputPatch[ki][kj] = inputVal;
-          elementWiseProducts[ki][kj] = product;
-          sum += product;
+      // Ensure the kernel fits within the padded input
+      if (top + kernelHeight <= paddedInput.length && left + kernelWidth <= paddedInput[0].length) {
+        // Extract input patch
+        const inputPatch: number[][] = [];
+        const elementWiseProducts: number[][] = [];
+        let sum = 0;
+        
+        for (let ki = 0; ki < kernelHeight; ki++) {
+          inputPatch[ki] = [];
+          elementWiseProducts[ki] = [];
+          for (let kj = 0; kj < kernelWidth; kj++) {
+            const inputVal = paddedInput[top + ki][left + kj];
+            const kernelVal = kernel[ki][kj];
+            const product = inputVal * kernelVal;
+            
+            inputPatch[ki][kj] = inputVal;
+            elementWiseProducts[ki][kj] = product;
+            sum += product;
+          }
         }
+        
+        output[i][j] = sum;
+        
+        // Calculate position relative to original input (for highlighting)
+        const originalRow = top - paddingValues.top;
+        const originalCol = left - paddingValues.left;
+        
+        steps.push({
+          position: { row: originalRow, col: originalCol },
+          inputPatch,
+          kernelValues: kernel.map(row => [...row]),
+          elementWiseProducts,
+          sum,
+          outputRow: i,
+          outputCol: j
+        });
       }
-      
-      output[outputRow][outputCol] = sum;
-      
-      // Calculate the position relative to the original input (accounting for padding offset)
-      const paddingOffset = padding === 'none' ? 0 : Math.floor(kernelSize / 2);
-      const originalRow = i - paddingOffset;
-      const originalCol = j - paddingOffset;
-      
-      steps.push({
-        position: { row: originalRow, col: originalCol },
-        inputPatch,
-        kernelValues: kernel.map(row => [...row]),
-        elementWiseProducts,
-        sum,
-        outputRow,
-        outputCol
-      });
-      
-      outputCol++;
     }
-    outputRow++;
   }
   
-  return { output, steps, outputDimensions: outputDims };
+  return { output, steps, outputDimensions: outputDims, paddingValues };
 }
 
 export function resizeTo64(imageData: ImageData): number[][] {

@@ -17,14 +17,45 @@ import {
   ConvolutionResult,
   ConvolutionStep 
 } from '@/lib/convolution';
-import { testConvolutionDimensions, testSquareConvolution } from '@/lib/convolution.test';
+import { testConvolutionDimensions, testSquareConvolution, testReflectPadding, testRequiredCases } from '@/lib/convolution.test';
 
 function App() {
   // Run tests in development
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
+      // Manual tests
+      console.log('=== Testing new padding system ===');
+      
+      // Test case 1: 4x4 input, 3x3 kernel, stride 1, zero padding should give 4x4 output
+      const testInput = [
+        [1, 2, 3, 4],
+        [5, 6, 7, 8],
+        [9, 10, 11, 12], 
+        [13, 14, 15, 16]
+      ];
+      
+      const identityKernel = [
+        [0, 0, 0],
+        [0, 1, 0],
+        [0, 0, 0]
+      ];
+      
+      const result1 = convolve2D(testInput, identityKernel, 1, 'zero');
+      console.log('Test 1 - Zero padding:', result1.outputDimensions, 'should be 4x4');
+      
+      // Test case 2: 5x5 input, 3x3 kernel, stride 2, valid padding should give 2x2 output  
+      const testInput2 = Array(5).fill(0).map(() => Array(5).fill(1));
+      const result2 = convolve2D(testInput2, identityKernel, 2, 'valid');
+      console.log('Test 2 - Valid padding stride 2:', result2.outputDimensions, 'should be 2x2');
+      
+      // Test case 3: Same padding should maintain input size divided by stride
+      const result3 = convolve2D(testInput, identityKernel, 1, 'same'); 
+      console.log('Test 3 - Same padding:', result3.outputDimensions, 'should be 4x4');
+      
       testConvolutionDimensions();
       testSquareConvolution();
+      testReflectPadding();
+      testRequiredCases();
     }
   }, []);
   // Initialize with a default sample image
@@ -40,7 +71,7 @@ function App() {
   // Convolution parameters
   const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
   const [stride, setStride] = useKV('stride', 1);
-  const [padding, setPadding] = useKV<PaddingType>('padding', 'none');
+  const [padding, setPadding] = useKV<PaddingType>('padding', 'valid');
   const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'sharpen');
   const [customKernel, setCustomKernel] = useState<number[][]>(() => {
     // Initialize with a 3x3 edge detection kernel as a more interesting default
