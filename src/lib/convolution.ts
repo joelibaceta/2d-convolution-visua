@@ -45,6 +45,14 @@ export const KERNEL_PRESETS = {
       [0, -1, 0]
     ]
   },
+  edge_detect: {
+    name: 'Edge Detect',
+    kernel: [
+      [0, -1, 0],
+      [-1, 4, -1],
+      [0, -1, 0]
+    ]
+  },
   edge_sobel_x: {
     name: 'Sobel X',
     kernel: [
@@ -59,6 +67,14 @@ export const KERNEL_PRESETS = {
       [-1, -2, -1],
       [0, 0, 0],
       [1, 2, 1]
+    ]
+  },
+  emboss: {
+    name: 'Emboss',
+    kernel: [
+      [-2, -1, 0],
+      [-1, 1, 1],
+      [0, 1, 2]
     ]
   }
 };
@@ -261,6 +277,22 @@ export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: numbe
   if (preset === 'box_blur') {
     const value = 1 / (size * size);
     return Array(size).fill(0).map(() => Array(size).fill(value));
+  }
+  
+  // For edge detection, generate any size 
+  if (preset === 'edge_detect') {
+    const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
+    const center = Math.floor(size / 2);
+    // Center is positive, neighbors are negative
+    kernel[center][center] = size * size - 1;
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (i !== center || j !== center) {
+          kernel[i][j] = -1;
+        }
+      }
+    }
+    return kernel;
   }
   
   // For other kernels, if different size requested, fall back to identity

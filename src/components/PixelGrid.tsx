@@ -61,21 +61,6 @@ export function PixelGrid({
     <div className={cn("flex flex-col items-center", className)}>
       <h3 className="text-lg font-semibold mb-2">{title}</h3>
       
-      {/* Sum of products overlay for output */}
-      {showSumOverlay && currentStep && (
-        <div className="bg-accent/20 rounded-lg p-2 mb-2 text-center w-full max-w-xs">
-          <div className="text-xs text-muted-foreground mb-1">
-            Sum of products:
-          </div>
-          <div className="text-lg font-mono font-bold text-accent-foreground">
-            {currentStep.sum.toFixed(3)}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            → Output[{currentStep.outputRow}, {currentStep.outputCol}]
-          </div>
-        </div>
-      )}
-      
       <div 
         className="relative border border-border rounded-lg p-2 bg-card"
         style={{
@@ -130,6 +115,22 @@ export function PixelGrid({
           })
         )}
       </div>
+      
+      {/* Sum of products overlay for output - positioned below grid */}
+      {showSumOverlay && currentStep && (
+        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 mt-2 text-center w-full max-w-xs">
+          <div className="text-xs text-muted-foreground mb-1">
+            Sum of products:
+          </div>
+          <div className="text-xl font-mono font-bold text-accent-foreground">
+            {currentStep.sum.toFixed(3)}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            → Output[{currentStep.outputRow}, {currentStep.outputCol}]
+          </div>
+        </div>
+      )}
+      
       <p className="text-sm text-muted-foreground mt-2">
         {dimensions.height}×{dimensions.width}
       </p>

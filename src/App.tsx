@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useKV } from '@github/spark/hooks';
+import { Edit } from '@phosphor-icons/react';
 import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
 import { KernelInspector } from '@/components/KernelInspector';
@@ -31,25 +32,28 @@ function App() {
   const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
   const [stride, setStride] = useKV('stride', 1);
   const [padding, setPadding] = useKV<PaddingType>('padding', 'none');
-  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'box_blur');
+  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'edge_detect');
   const [customKernel, setCustomKernel] = useState<number[][]>(() => {
-    // Initialize with a 3x3 box blur as default instead of empty
+    // Initialize with a 3x3 edge detection kernel as a more interesting default
     return [
-      [1/9, 1/9, 1/9],
-      [1/9, 1/9, 1/9],
-      [1/9, 1/9, 1/9]
+      [0, -1, 0],
+      [-1, 4, -1], 
+      [0, -1, 0]
     ];
   });
   
-  // Display options
-  const [showInputValues, setShowInputValues] = useKV('show-input-values', false);
-  const [showKernelValues, setShowKernelValues] = useKV('show-kernel-values', true);
-  const [showOutputValues, setShowOutputValues] = useKV('show-output-values', false);
-  const [normalizeOutput, setNormalizeOutput] = useKV('normalize-output', false);
+  // Display options  
+  const [showInputValues, setShowInputValues] = useKV<boolean>('show-input-values', false);
+  const [showKernelValues, setShowKernelValues] = useKV<boolean>('show-kernel-values', true);
+  const [showOutputValues, setShowOutputValues] = useKV<boolean>('show-output-values', false);
+  const [normalizeOutput, setNormalizeOutput] = useKV<boolean>('normalize-output', false);
   
   // Current kernel - memoized to prevent infinite re-renders
   const currentKernel = useMemo(() => {
-    return kernelPreset === 'custom' ? customKernel : generateKernel(kernelPreset, kernelSize);
+    if (kernelPreset === 'custom') {
+      return customKernel;
+    }
+    return generateKernel(kernelPreset, kernelSize);
   }, [kernelPreset, customKernel, kernelSize]);
   
   // Current step data
@@ -147,13 +151,22 @@ function App() {
   
   const handleKernelSizeChange = useCallback((size: number) => {
     setKernelSize(size);
-    // When kernel size changes and we're using custom, generate identity kernel of that size
+    // When kernel size changes and we're using custom, generate a new kernel of that size with edge detection
     if (kernelPreset === 'custom') {
-      const newKernel = Array(size).fill(0).map(() => Array(size).fill(0));
-      // Put 1 in the center for identity
-      const center = Math.floor(size / 2);
-      newKernel[center][center] = 1;
-      setCustomKernel(newKernel);
+      if (size === 3) {
+        // Use edge detection kernel for 3x3
+        setCustomKernel([
+          [0, -1, 0],
+          [-1, 4, -1],
+          [0, -1, 0]
+        ]);
+      } else {
+        // For other sizes, create identity kernel
+        const newKernel = Array(size).fill(0).map(() => Array(size).fill(0));
+        const center = Math.floor(size / 2);
+        newKernel[center][center] = 1;
+        setCustomKernel(newKernel);
+      }
     }
   }, [setKernelSize, kernelPreset]);
   
@@ -200,7 +213,9 @@ function App() {
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-2">2D Convolution Visualizer</h1>
           <p className="text-muted-foreground">
-            Upload an image and watch how convolution kernels transform it step by step
+            Upload an image and watch how convolution kernels transform it step by step.
+            <br />
+            <span className="text-accent">Select "Custom" preset to create your own image filters!</span>
           </p>
         </div>
         
@@ -277,8 +292,13 @@ function App() {
         )}
         
         {/* Keyboard shortcuts hint */}
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground space-y-1">
           <p>Keyboard shortcuts: <kbd className="bg-muted px-2 py-1 rounded text-xs">Space</kbd> to play/pause, <kbd className="bg-muted px-2 py-1 rounded text-xs">N</kbd> to step forward</p>
+          {kernelPreset === 'custom' && (
+            <p className="text-accent flex items-center justify-center gap-1">
+              Click the <Edit className="w-3 h-3" /> icon in the Kernel Inspector to edit your custom filter values
+            </p>
+          )}
         </div>
       </div>
     </div>

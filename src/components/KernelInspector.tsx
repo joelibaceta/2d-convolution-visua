@@ -26,7 +26,7 @@ export function KernelInspector({
   const [editValues, setEditValues] = useState<string[][]>([]);
   
   const kernelSize = kernel.length;
-  const cellSize = Math.max(16, Math.min(24, 120 / kernelSize)); // Smaller cells
+  const cellSize = Math.max(12, Math.min(20, 80 / kernelSize)); // Even smaller cells for compact layout
 
   const maxKernelValue = useMemo(() => {
     return Math.max(...kernel.flat().map(Math.abs));
@@ -74,8 +74,14 @@ export function KernelInspector({
       <div className="flex items-center gap-2 mb-1">
         <h4 className="text-xs font-medium">{title}</h4>
         {editable && isEditable && !isEditing && (
-          <Button size="sm" variant="ghost" onClick={startEditing} className="h-5 w-5 p-0">
-            <Edit className="h-3 w-3" />
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={startEditing} 
+            className="h-5 w-5 p-0 hover:bg-accent/20"
+            title="Edit kernel values"
+          >
+            <Edit className="h-3 w-3 text-accent" />
           </Button>
         )}
       </div>
@@ -157,13 +163,13 @@ export function KernelInspector({
         )}
       </div>
       
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1"> {/* Reduced gap for more compact layout */}
         {renderGrid("Kernel", kernel, 'kernel', true)}
         
         {currentStep && (
           <>
             {renderGrid("Input Patch", currentStep.inputPatch, 'input')}
-            {renderGrid("Element-wise Product", currentStep.elementWiseProducts, 'product')}
+            {renderGrid("Products", currentStep.elementWiseProducts, 'product')}
           </>
         )}
       </div>
