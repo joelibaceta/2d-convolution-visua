@@ -283,12 +283,40 @@ export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: numbe
   if (preset === 'edge_detect') {
     const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
     const center = Math.floor(size / 2);
-    // Center is positive, neighbors are negative
-    kernel[center][center] = size * size - 1;
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        if (i !== center || j !== center) {
-          kernel[i][j] = -1;
+    
+    if (size <= 3) {
+      // For small kernels, use the classic pattern
+      kernel[center][center] = size * size - 1;
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (i !== center || j !== center) {
+            kernel[i][j] = -1;
+          }
+        }
+      }
+    } else {
+      // For larger kernels, use a Laplacian-like pattern with distance-based weights
+      const totalNegative = size * size - 1;
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (i === center && j === center) {
+            kernel[i][j] = totalNegative;
+          } else {
+            const distance = Math.max(Math.abs(i - center), Math.abs(j - center));
+            // Weight by inverse distance - closer neighbors get more negative weight
+            kernel[i][j] = -1 / distance;
+          }
+        }
+      }
+      
+      // Normalize so the negative weights sum to -totalNegative
+      const negativeSum = kernel.flat().filter(v => v < 0).reduce((sum, v) => sum + v, 0);
+      const scale = -totalNegative / negativeSum;
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (kernel[i][j] < 0) {
+            kernel[i][j] *= scale;
+          }
         }
       }
     }
@@ -299,12 +327,39 @@ export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: numbe
   if (preset === 'sharpen') {
     const kernel = Array(size).fill(0).map(() => Array(size).fill(0));
     const center = Math.floor(size / 2);
-    kernel[center][center] = size * size;
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        if (i !== center || j !== center) {
-          kernel[i][j] = -1;
+    
+    if (size <= 3) {
+      // For small kernels, use the classic pattern
+      kernel[center][center] = size * size;
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (i !== center || j !== center) {
+            kernel[i][j] = -1;
+          }
         }
+      }
+    } else {
+      // For larger kernels, use a more refined sharpen pattern
+      // Center gets strong positive weight, immediate neighbors get negative weight
+      const centerWeight = size * 2;
+      kernel[center][center] = centerWeight;
+      
+      // Apply negative weights with distance-based falloff
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (i !== center || j !== center) {
+            const distance = Math.max(Math.abs(i - center), Math.abs(j - center));
+            if (distance <= 2) { // Only apply negative weights to close neighbors
+              kernel[i][j] = -1 / distance;
+            }
+          }
+        }
+      }
+      
+      // Ensure the kernel sums to 1 for proper sharpening
+      const sum = kernel.flat().reduce((a, b) => a + b, 0);
+      if (sum !== 1) {
+        kernel[center][center] += (1 - sum);
       }
     }
     return kernel;
@@ -338,9 +393,35 @@ export function generateKernel(preset: keyof typeof KERNEL_PRESETS, size?: numbe
       const sum = kernel.flat().reduce((a, b) => a + b, 0);
       return kernel.map(row => row.map(val => val / sum));
     }
-    // For other sizes, fall back to box blur approximation
-    const value = 1 / (size * size);
-    return Array(size).fill(0).map(() => Array(size).fill(value));
+    if (size === 9) {
+      // 9x9 Gaussian approximation
+      const kernel = [
+        [0, 0, 0, 1, 1, 1, 0, 0, 0],
+        [0, 1, 3, 6, 7, 6, 3, 1, 0],
+        [0, 3, 12, 26, 33, 26, 12, 3, 0],
+        [1, 6, 26, 55, 71, 55, 26, 6, 1],
+        [1, 7, 33, 71, 91, 71, 33, 7, 1],
+        [1, 6, 26, 55, 71, 55, 26, 6, 1],
+        [0, 3, 12, 26, 33, 26, 12, 3, 0],
+        [0, 1, 3, 6, 7, 6, 3, 1, 0],
+        [0, 0, 0, 1, 1, 1, 0, 0, 0]
+      ];
+      const sum = kernel.flat().reduce((a, b) => a + b, 0);
+      return kernel.map(row => row.map(val => val / sum));
+    }
+    // For other sizes, generate a proper Gaussian approximation using distance from center
+    const center = Math.floor(size / 2);
+    const sigma = size / 6; // Adjust sigma based on kernel size
+    const kernel = Array(size).fill(0).map((_, i) => 
+      Array(size).fill(0).map((_, j) => {
+        const distance = Math.sqrt((i - center) ** 2 + (j - center) ** 2);
+        return Math.exp(-(distance ** 2) / (2 * sigma ** 2));
+      })
+    );
+    
+    // Normalize the kernel
+    const sum = kernel.flat().reduce((a, b) => a + b, 0);
+    return kernel.map(row => row.map(val => val / sum));
   }
   
   // For Sobel kernels, only work with 3x3. For other sizes, switch to edge detection

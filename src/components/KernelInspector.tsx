@@ -31,6 +31,15 @@ export function KernelInspector({
   const maxKernelValue = useMemo(() => {
     return Math.max(...kernel.flat().map(Math.abs));
   }, [kernel]);
+  
+  // Debug check for very small values in large kernels
+  const hasSmallValues = useMemo(() => {
+    return kernel.flat().some(val => Math.abs(val) > 0 && Math.abs(val) < 0.001);
+  }, [kernel]);
+  
+  const kernelSum = useMemo(() => {
+    return kernel.flat().reduce((sum, val) => sum + val, 0);
+  }, [kernel]);
 
   const startEditing = () => {
     setEditValues(kernel.map(row => row.map(val => val.toString())));
@@ -136,7 +145,11 @@ export function KernelInspector({
                     className="font-mono text-xs font-medium"
                     style={{ fontSize: `${Math.min(Math.max(cellSize / 4, 6), 8)}px` }}
                   >
-                    {Math.abs(value) < 0.001 ? '0' : value.toFixed(1)}
+                    {Math.abs(value) < 0.0001 ? '0' : 
+                     Math.abs(value) < 0.001 ? value.toFixed(4) :
+                     Math.abs(value) < 0.01 ? value.toFixed(3) :
+                     Math.abs(value) < 0.1 ? value.toFixed(2) :
+                     value.toFixed(1)}
                   </span>
                 ) : null}
               </div>
@@ -174,8 +187,11 @@ export function KernelInspector({
         )}
       </div>
 
-      <div className="text-xs text-muted-foreground">
-        {kernelSize}×{kernelSize}
+      <div className="text-xs text-muted-foreground space-y-1">
+        <div>{kernelSize}×{kernelSize}</div>
+        <div>Sum: {kernelSum.toFixed(3)}</div>
+        <div>Max: {maxKernelValue.toFixed(3)}</div>
+        {hasSmallValues && <div className="text-accent">Contains very small values</div>}
       </div>
     </div>
   );
