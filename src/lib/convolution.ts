@@ -153,9 +153,13 @@ export function convolve2D(
   let outputRow = 0;
   let outputCol = 0;
   
-  for (let i = 0; i <= paddedInput.length - kernelSize; i += stride) {
+  // Calculate the maximum valid starting positions for kernel placement
+  const maxRowStart = paddedInput.length - kernelSize;
+  const maxColStart = paddedInput[0].length - kernelSize;
+  
+  for (let i = 0; i <= maxRowStart; i += stride) {
     outputCol = 0;
-    for (let j = 0; j <= paddedInput[0].length - kernelSize; j += stride) {
+    for (let j = 0; j <= maxColStart; j += stride) {
       if (outputRow >= outputDims.height || outputCol >= outputDims.width) break;
       
       // Extract input patch
@@ -179,8 +183,13 @@ export function convolve2D(
       
       output[outputRow][outputCol] = sum;
       
+      // Calculate the position relative to the original input (accounting for padding offset)
+      const paddingOffset = padding === 'none' ? 0 : Math.floor(kernelSize / 2);
+      const originalRow = i - paddingOffset;
+      const originalCol = j - paddingOffset;
+      
       steps.push({
-        position: { row: i, col: j },
+        position: { row: originalRow, col: originalCol },
         inputPatch,
         kernelValues: kernel.map(row => [...row]),
         elementWiseProducts,
