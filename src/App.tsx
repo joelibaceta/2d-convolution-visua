@@ -153,25 +153,8 @@ function App() {
   const handleKernelSizeChange = useCallback((size: number) => {
     setKernelSize(size);
     
-    // If we're using a fixed-size preset that doesn't match the new size,
-    // switch to a scalable preset that makes sense
-    if (kernelPreset !== 'custom') {
-      const currentPresetSize = KERNEL_PRESETS[kernelPreset].kernel.length;
-      if (currentPresetSize !== size) {
-        // Switch to appropriate scalable presets based on the size
-        if (size === 1) {
-          setKernelPreset('identity');
-        } else {
-          // For larger sizes, use box_blur or edge_detect which scale well
-          if (kernelPreset === 'box_blur' || kernelPreset === 'identity' || kernelPreset === 'edge_detect') {
-            // Keep the current preset as it scales
-          } else {
-            // Switch to edge_detect as a good general purpose scalable kernel
-            setKernelPreset('edge_detect');
-          }
-        }
-      }
-    }
+    // All presets now support scaling, so we don't need to switch presets automatically
+    // The generateKernel function will handle creating appropriate kernels for each size
     
     // When kernel size changes and we're using custom, generate a new kernel of that size
     if (kernelPreset === 'custom') {
@@ -190,7 +173,7 @@ function App() {
         setCustomKernel(newKernel);
       }
     }
-  }, [setKernelSize, kernelPreset, setKernelPreset]);
+  }, [setKernelSize, kernelPreset]);
   
   // Process output for display
   const displayOutput = convolutionResult ? (() => {
