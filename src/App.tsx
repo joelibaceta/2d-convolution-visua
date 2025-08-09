@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useKV } from '@github/spark/hooks';
-import { Edit } from '@phosphor-icons/react';
+import { Edit } from 'lucide-react';
 import { ImageUploader } from '@/components/ImageUploader';
 import { PixelGrid } from '@/components/PixelGrid';
 import { PaddedPixelGrid } from '@/components/PaddedPixelGrid';
@@ -66,20 +65,20 @@ function App() {
     }
   }, []);
   // Initialize with a default sample image
-  const [inputImage, setInputImage] = useKV<number[][]>('input-image', generateCheckerboard());
+  const [inputImage, setInputImage] = useState<number[][]>(generateCheckerboard());
   const [convolutionResult, setConvolutionResult] = useState<ConvolutionResult | null>(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   
   // Animation state
   const [isPlaying, setIsPlaying] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useKV('animation-speed', 500);
+  const [animationSpeed, setAnimationSpeed] = useState(500);
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   
   // Convolution parameters
-  const [kernelSize, setKernelSize] = useKV('kernel-size', 3);
-  const [stride, setStride] = useKV('stride', 1);
-  const [padding, setPadding] = useKV<PaddingType>('padding', 'valid');
-  const [kernelPreset, setKernelPreset] = useKV<keyof typeof KERNEL_PRESETS | 'custom'>('kernel-preset', 'sharpen');
+  const [kernelSize, setKernelSize] = useState(3);
+  const [stride, setStride] = useState(1);
+  const [padding, setPadding] = useState<PaddingType>('valid');
+  const [kernelPreset, setKernelPreset] = useState<keyof typeof KERNEL_PRESETS | 'custom'>('sharpen');
   const [customKernel, setCustomKernel] = useState<number[][]>(() => {
     // Initialize with a 3x3 edge detection kernel as a more interesting default
     return [
@@ -90,10 +89,10 @@ function App() {
   });
   
   // Display options  
-  const [showInputValues, setShowInputValues] = useKV<boolean>('show-input-values', false);
-  const [showKernelValues, setShowKernelValues] = useKV<boolean>('show-kernel-values', true);
-  const [showOutputValues, setShowOutputValues] = useKV<boolean>('show-output-values', false);
-  const [normalizeOutput, setNormalizeOutput] = useKV<boolean>('normalize-output', false);
+  const [showInputValues, setShowInputValues] = useState<boolean>(false);
+  const [showKernelValues, setShowKernelValues] = useState<boolean>(true);
+  const [showOutputValues, setShowOutputValues] = useState<boolean>(false);
+  const [normalizeOutput, setNormalizeOutput] = useState<boolean>(false);
   
   // Current kernel - memoized to prevent infinite re-renders
   const currentKernel = useMemo(() => {
@@ -190,7 +189,7 @@ function App() {
     if (preset === 'custom') {
       setCustomKernel(currentKernel.map(row => [...row]));
     }
-  }, [setKernelPreset, currentKernel]);
+  }, [currentKernel]);
   
   const handleCustomKernelChange = useCallback((newKernel: number[][]) => {
     setCustomKernel(newKernel);
@@ -219,7 +218,7 @@ function App() {
         setCustomKernel(newKernel);
       }
     }
-  }, [setKernelSize, kernelPreset]);
+  }, [kernelPreset]);
   
   // Process output for display
   const displayOutput = convolutionResult ? (() => {

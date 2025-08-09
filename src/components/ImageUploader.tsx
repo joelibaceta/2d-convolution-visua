@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload, X } from '@phosphor-icons/react';
+import { Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

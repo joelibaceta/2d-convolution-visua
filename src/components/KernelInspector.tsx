@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { ConvolutionStep } from '@/lib/convolution';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Edit, Check, X } from '@phosphor-icons/react';
+import { Edit, Check, X } from 'lucide-react';
 
 interface KernelInspectorProps {
   kernel: number[][];
