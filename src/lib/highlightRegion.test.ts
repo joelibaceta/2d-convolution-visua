@@ -12,30 +12,17 @@ function calculateHighlightRegion(
   const kernelHeight = kernel.length;
   const kernelWidth = kernel[0]?.length || 0;
   
-  // Don't show highlight if kernel position is completely outside the input bounds
-  if (currentStep.position.row >= inputImage.length || 
-      currentStep.position.col >= inputImage[0].length ||
-      currentStep.position.row + kernelHeight <= 0 ||
-      currentStep.position.col + kernelWidth <= 0) {
-    return undefined;
-  }
+  // According to specification: "The highlighted kernel window is always k×k.
+  // Enabling padding must not shrink the highlight."
+  // The highlight region should always show the full kernel size
+  const region = {
+    startRow: currentStep.position.row,
+    startCol: currentStep.position.col,
+    height: kernelHeight,
+    width: kernelWidth
+  };
   
-  const startRow = Math.max(0, currentStep.position.row);
-  const startCol = Math.max(0, currentStep.position.col);
-  const endRow = Math.min(inputImage.length, currentStep.position.row + kernelHeight);
-  const endCol = Math.min(inputImage[0].length, currentStep.position.col + kernelWidth);
-  
-  // Only create highlight if there's a visible region with valid dimensions
-  if (startRow < inputImage.length && startCol < inputImage[0].length && 
-      endRow > startRow && endCol > startCol) {
-    return {
-      startRow,
-      startCol,
-      height: endRow - startRow,
-      width: endCol - startCol
-    };
-  }
-  return undefined;
+  return region;
 }
 
 // Test suite
@@ -63,30 +50,33 @@ describe('Highlight Region Calculation', () => {
   test('should handle edge cases correctly', () => {
     const kernel = generateKernel('identity', 3);
     
-    // Test corner case
+    // Test corner case - according to spec, highlight should always be k×k
     const cornerStep = { position: { row: 8, col: 8 } };
     const cornerHighlight = calculateHighlightRegion(cornerStep, testImage, kernel);
     
     expect(cornerHighlight).toBeDefined();
-    expect(cornerHighlight!.height).toBe(2); // Clipped by image boundary
-    expect(cornerHighlight!.width).toBe(2);  // Clipped by image boundary
+    expect(cornerHighlight!.height).toBe(3); // Always k×k per specification
+    expect(cornerHighlight!.width).toBe(3);  // Always k×k per specification
     
-    // Test negative position (with padding)
+    // Test negative position (with padding) - always k×k per spec
     const negativeStep = { position: { row: -1, col: -1 } };
     const negativeHighlight = calculateHighlightRegion(negativeStep, testImage, kernel);
     
     expect(negativeHighlight).toBeDefined();
-    expect(negativeHighlight!.height).toBe(2); // Only bottom 2 rows visible
-    expect(negativeHighlight!.width).toBe(2);  // Only right 2 cols visible
+    expect(negativeHighlight!.height).toBe(3); // Always k×k per specification
+    expect(negativeHighlight!.width).toBe(3);  // Always k×k per specification
   });
   
-  test('should return undefined for completely out-of-bounds positions', () => {
+  test('should return highlight for out-of-bounds positions per spec', () => {
     const kernel = generateKernel('identity', 3);
     
+    // Test completely out of bounds - per spec: "The highlighted kernel window is always k×k"
     const outOfBoundsStep = { position: { row: 20, col: 20 } };
     const highlight = calculateHighlightRegion(outOfBoundsStep, testImage, kernel);
     
-    expect(highlight).toBeUndefined();
+    expect(highlight).toBeDefined();
+    expect(highlight!.height).toBe(3);
+    expect(highlight!.width).toBe(3);
   });
 });
 
